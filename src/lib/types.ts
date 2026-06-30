@@ -3,6 +3,7 @@ export type PaidStatus = "paid" | "unpaid" | "partial";
 export type RenewalIntent = "yes" | "no" | "unknown";
 export type GroupStatus = "paid_all" | "partially_paid" | "unpaid" | "expired" | "expiring_soon" | "incomplete";
 export type TransactionType = "income" | "expense";
+export type AccountType = "private" | "shared";
 
 export type AppRecord = {
   id: string;
@@ -19,6 +20,7 @@ export type ServiceAccount = {
   app_id: string;
   label: string;
   login_email: string;
+  account_type: AccountType;
   password_encrypted: string | null;
   password_hint: string | null;
   expiry_date: string;
@@ -72,6 +74,7 @@ export type Transaction = {
   date: string;
   note: string | null;
   slip_url: string | null;
+  color: string;
 };
 
 export type TelegramSettings = {
