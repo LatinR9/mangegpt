@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { apps as seedApps, customers as seedCustomers, groupMembers as seedGroupMembers, serviceAccounts as seedServiceAccounts, shareGroups as seedShareGroups, transactions as seedTransactions } from "@/lib/mock-data";
-import type { AppRecord, Customer, GroupMember, ServiceAccount, ShareGroup, Transaction } from "@/lib/types";
+import { appAccountStock as seedStock, apps as seedApps, customers as seedCustomers, fileFolders as seedFileFolders, groupMembers as seedGroupMembers, serviceAccounts as seedServiceAccounts, shareGroups as seedShareGroups, transactions as seedTransactions, uploadedFiles as seedUploadedFiles } from "@/lib/mock-data";
+import type { AppAccountStock, AppRecord, Customer, FileFolder, GroupMember, ServiceAccount, ShareGroup, Transaction, UploadedFile } from "@/lib/types";
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 
 export function createId(prefix: string) {
@@ -34,6 +34,9 @@ export function useAdminData() {
   const [customers, setCustomers] = useLocalStorageState<Customer[]>("sgm.customers", seedCustomers);
   const [groupMembers, setGroupMembers] = useLocalStorageState<GroupMember[]>("sgm.groupMembers", seedGroupMembers);
   const [transactions, setTransactions] = useLocalStorageState<Transaction[]>("sgm.transactions", normalizedSeedTransactions);
+  const [fileFolders, setFileFolders] = useLocalStorageState<FileFolder[]>("sgm.fileFolders", seedFileFolders);
+  const [uploadedFiles, setUploadedFiles] = useLocalStorageState<UploadedFile[]>("sgm.uploadedFiles", seedUploadedFiles);
+  const [stockAccounts, setStockAccounts] = useLocalStorageState<AppAccountStock[]>("sgm.appAccountStock", seedStock);
   const normalizedServiceAccounts = useMemo(() => normalizeServiceAccounts(serviceAccounts), [serviceAccounts]);
   const normalizedTransactions = useMemo(() => normalizeTransactions(transactions), [transactions]);
 
@@ -49,6 +52,12 @@ export function useAdminData() {
     groupMembers,
     setGroupMembers,
     transactions: normalizedTransactions,
-    setTransactions
-  }), [apps, customers, groupMembers, normalizedServiceAccounts, normalizedTransactions, setApps, setCustomers, setGroupMembers, setServiceAccounts, setShareGroups, setTransactions, shareGroups]);
+    setTransactions,
+    fileFolders,
+    setFileFolders,
+    uploadedFiles,
+    setUploadedFiles,
+    stockAccounts,
+    setStockAccounts
+  }), [apps, customers, fileFolders, groupMembers, normalizedServiceAccounts, normalizedTransactions, setApps, setCustomers, setFileFolders, setGroupMembers, setServiceAccounts, setShareGroups, setStockAccounts, setTransactions, setUploadedFiles, shareGroups, stockAccounts, uploadedFiles]);
 }

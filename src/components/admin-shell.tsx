@@ -1,9 +1,10 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { BarChart3, BellRing, CreditCard, LayoutDashboard, LogOut, Package, Repeat2, Settings, Shield, Users } from "lucide-react";
+import { Archive, BarChart3, BellRing, CreditCard, FolderOpen, LayoutDashboard, LogOut, Package, Settings, Shield, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form";
+import { useAppSettings } from "@/hooks/use-app-settings";
 import { useLanguage } from "@/hooks/use-language";
 import type { TranslationKey } from "@/lib/i18n";
 
@@ -11,9 +12,10 @@ const navItems: { href: string; labelKey: TranslationKey; icon: typeof LayoutDas
   { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/apps", labelKey: "apps", icon: Package },
   { href: "/accounts", labelKey: "serviceAccounts", icon: Shield },
+  { href: "/stock", labelKey: "stock", icon: Archive },
   { href: "/groups", labelKey: "groups", icon: Users },
   { href: "/customers", labelKey: "customers", icon: Users },
-  { href: "/groups", labelKey: "renewals", icon: Repeat2 },
+  { href: "/files", labelKey: "files", icon: FolderOpen },
   { href: "/accounting", labelKey: "accounting", icon: BarChart3 },
   { href: "/settings/telegram", labelKey: "telegram", icon: BellRing },
   { href: "/settings", labelKey: "settings", icon: Settings }
@@ -21,14 +23,17 @@ const navItems: { href: string; labelKey: TranslationKey; icon: typeof LayoutDas
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const { language, setLanguage, t } = useLanguage();
+  const [settings] = useAppSettings();
 
   return (
     <div className="min-h-screen bg-transparent lg:grid lg:grid-cols-[280px_1fr]">
       <aside className="admin-band sticky top-0 z-30 lg:fixed lg:inset-y-0 lg:w-[280px] lg:border-r lg:border-b-0">
         <div className="flex h-16 items-center justify-between px-4 lg:h-24 lg:items-start lg:flex-col lg:justify-center">
           <Link href="/dashboard" className="flex items-center gap-3 font-semibold">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/40 bg-blue-500/15 text-blue-200 shadow-lg shadow-blue-950/40"><CreditCard className="h-5 w-5" /></span>
-            <span className="text-slate-50">SubGroup Manager</span>
+            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-blue-400/40 bg-blue-500/15 text-blue-200 shadow-lg shadow-blue-950/40">
+              {settings.site_logo_url ? <img src={settings.site_logo_url} alt="" className="h-full w-full object-cover" /> : <CreditCard className="h-5 w-5" />}
+            </span>
+            <span className="text-slate-50">{settings.site_name || "SubGroup Manager"}</span>
           </Link>
           <form action="/logout" method="post" className="lg:hidden"><Button size="icon" variant="ghost" title="Log out"><LogOut className="h-4 w-4" /></Button></form>
         </div>

@@ -4,6 +4,16 @@ export type RenewalIntent = "yes" | "no" | "unknown";
 export type GroupStatus = "paid_all" | "partially_paid" | "unpaid" | "expired" | "expiring_soon" | "incomplete";
 export type TransactionType = "income" | "expense";
 export type AccountType = "private" | "shared";
+export type StockStatus = "available" | "reserved" | "sold" | "expired" | "problem";
+
+export type AppSettings = {
+  id: string;
+  site_name: string;
+  site_logo_url: string;
+  site_description: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
+};
 
 export type AppRecord = {
   id: string;
@@ -89,6 +99,7 @@ export type TelegramSettings = {
   reminder_days_before: number;
   reminder_days_before_expiry: number;
   enabled: boolean;
+  default_message_template: string | null;
 };
 
 export type ReminderLog = {
@@ -98,4 +109,42 @@ export type ReminderLog = {
   message: string;
   status: "prepared" | "sent" | "failed";
   created_at: string;
+};
+
+export type FileFolder = {
+  id: string;
+  name: string;
+  color: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type UploadedFile = {
+  id: string;
+  folder_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string | null;
+  file_size: number | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type AppAccountStock = {
+  id: string;
+  app_id: string;
+  label: string;
+  login_email: string;
+  password: string | null;
+  password_encrypted: string | null;
+  account_type: AccountType;
+  cost: number;
+  selling_price: number;
+  status: StockStatus;
+  purchase_date: string | null;
+  expiry_date: string | null;
+  supplier: string | null;
+  note: string | null;
+  image_url: string | null;
+  folder_file_id: string | null;
 };

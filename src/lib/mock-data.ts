@@ -1,4 +1,13 @@
-﻿import type { AppRecord, Customer, GroupMember, ServiceAccount, ShareGroup, TelegramSettings, Transaction } from "@/lib/types";
+﻿import type { AppAccountStock, AppRecord, AppSettings, Customer, FileFolder, GroupMember, ServiceAccount, ShareGroup, TelegramSettings, Transaction, UploadedFile } from "@/lib/types";
+
+export const appSettings: AppSettings = {
+  id: "settings-main",
+  site_name: "SubGroup Manager",
+  site_logo_url: "",
+  site_description: "Private admin dashboard for shared subscriptions.",
+  primary_color: "#3b82f6",
+  accent_color: "#2563eb"
+};
 
 export const apps: AppRecord[] = [
   { id: "app-stream", name: "StreamBox", logo_url: "https://api.dicebear.com/8.x/shapes/svg?seed=StreamBox", color: "#0f766e", default_seats: 5, note: "Family streaming plan", status: "active" },
@@ -43,6 +52,23 @@ export const transactions: Transaction[] = [
 ];
 
 export const telegramSettings: TelegramSettings[] = [
-  { id: "tg-1", bot_token: "", bot_token_encrypted: "mock_encrypted_token", bot_token_hint: "bot", chat_id: "", chat_id_encrypted: "mock_encrypted_chat", chat_id_hint: "cha", reminder_days_before: 3, reminder_days_before_expiry: 3, enabled: true }
+  { id: "tg-1", bot_token: "", bot_token_encrypted: "mock_encrypted_token", bot_token_hint: "bot", chat_id: "", chat_id_encrypted: "mock_encrypted_chat", chat_id_hint: "cha", reminder_days_before: 3, reminder_days_before_expiry: 3, enabled: true, default_message_template: "Reminder: {app_name} / {group_name}\nExpiry: {expiry_date}\nPaid: {paid_count}\nUnpaid: {unpaid_count}" }
 ];
 
+export const fileFolders: FileFolder[] = [
+  { id: "folder-slips", name: "Payment slips / สลิปโอนเงิน", color: "#22c55e", note: "Payment proof images", created_at: "2026-07-01T00:00:00.000Z" },
+  { id: "folder-products", name: "Product images / รูปสินค้า", color: "#3b82f6", note: "Product and plan visuals", created_at: "2026-07-01T00:00:00.000Z" },
+  { id: "folder-customers", name: "Customer profiles / รูปลูกค้า", color: "#a855f7", note: "Customer profile assets", created_at: "2026-07-01T00:00:00.000Z" },
+  { id: "folder-accounts", name: "App accounts / รูปบัญชีแอพ", color: "#f59e0b", note: "Account screenshots", created_at: "2026-07-01T00:00:00.000Z" },
+  { id: "folder-other", name: "Other / อื่นๆ", color: "#64748b", note: "Miscellaneous files", created_at: "2026-07-01T00:00:00.000Z" }
+];
+
+export const uploadedFiles: UploadedFile[] = [
+  { id: "file-1", folder_id: "folder-products", file_name: "streambox-plan.png", file_url: "https://api.dicebear.com/8.x/shapes/svg?seed=streambox-file", file_type: "image/svg+xml", file_size: 42000, note: "Mock product image", created_at: "2026-07-01T00:00:00.000Z" },
+  { id: "file-2", folder_id: "folder-accounts", file_name: "account-screen.png", file_url: "https://api.dicebear.com/8.x/shapes/svg?seed=account-file", file_type: "image/svg+xml", file_size: 51000, note: "Mock account screenshot", created_at: "2026-07-01T00:00:00.000Z" }
+];
+
+export const appAccountStock: AppAccountStock[] = [
+  { id: "stock-1", app_id: "app-stream", label: "StreamBox unsold A", login_email: "stock.streambox.a@example.test", password: "stock-stream-a", password_encrypted: "mock_stock_encrypted_1", account_type: "shared", cost: 58, selling_price: 95, status: "available", purchase_date: "2026-06-25", expiry_date: "2026-07-25", supplier: "Mock Supplier A", note: "Ready for sale", image_url: "https://api.dicebear.com/8.x/shapes/svg?seed=stock-stream", folder_file_id: "file-2" },
+  { id: "stock-2", app_id: "app-design", label: "DesignCloud reserved seat", login_email: "stock.design@example.test", password: "stock-design-b", password_encrypted: "mock_stock_encrypted_2", account_type: "private", cost: 96, selling_price: 145, status: "reserved", purchase_date: "2026-06-20", expiry_date: "2026-07-05", supplier: "Mock Supplier B", note: "Waiting for payment", image_url: null, folder_file_id: null }
+];
