@@ -1,0 +1,60 @@
+export type Language = "th" | "en";
+
+export const translations = {
+  th: {
+    dashboard: "แดชบอร์ด",
+    apps: "แอป",
+    serviceAccounts: "บัญชีบริการ",
+    groups: "กลุ่ม",
+    customers: "ลูกค้า",
+    renewals: "ต่ออายุ",
+    accounting: "บัญชีรายรับรายจ่าย",
+    settings: "ตั้งค่า",
+    telegram: "Telegram",
+    newApp: "เพิ่มแอป",
+    newGroup: "เพิ่มกลุ่ม",
+    newCustomer: "เพิ่มลูกค้า",
+    newAccount: "เพิ่มบัญชี",
+    newTransaction: "เพิ่มรายการ",
+    save: "บันทึก",
+    delete: "ลบ",
+    edit: "แก้ไข",
+    searchCustomer: "ค้นหาลูกค้า",
+    income: "รายรับ",
+    expense: "รายจ่าย",
+    private: "ส่วนตัว",
+    shared: "แชร์",
+    saved: "บันทึกแล้ว",
+    empty: "ยังไม่มีข้อมูล",
+    language: "ภาษา"
+  },
+  en: {
+    dashboard: "Dashboard",
+    apps: "Apps",
+    serviceAccounts: "Service accounts",
+    groups: "Groups",
+    customers: "Customers",
+    renewals: "Renewals",
+    accounting: "Accounting",
+    settings: "Settings",
+    telegram: "Telegram",
+    newApp: "New app",
+    newGroup: "New group",
+    newCustomer: "New customer",
+    newAccount: "New account",
+    newTransaction: "New transaction",
+    save: "Save",
+    delete: "Delete",
+    edit: "Edit",
+    searchCustomer: "Search customer",
+    income: "Income",
+    expense: "Expense",
+    private: "Private",
+    shared: "Shared",
+    saved: "Saved",
+    empty: "No data yet",
+    language: "Language"
+  }
+} as const;
+
+export type TranslationKey = keyof typeof translations.en;
