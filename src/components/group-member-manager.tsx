@@ -53,6 +53,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
   const [activeSeat, setActiveSeat] = useState(1);
   const [customerSearch, setCustomerSearch] = useState("");
   const [saved, setSaved] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (!group) return;
@@ -60,6 +61,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
     setActiveSeat(1);
     setCustomerSearch("");
     setSaved(false);
+    setHasUnsavedChanges(false);
   }, [group?.id, groupMembers, group]);
 
   const activeMember = useMemo(() => {
@@ -91,6 +93,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
 
   function updateActiveMember(next: GroupMember) {
     setSaved(false);
+    setHasUnsavedChanges(true);
     setDraftMembers((current) => {
       const withoutSeat = current.filter((member) => member.seat_no !== next.seat_no);
       if (!next.customer_id) return withoutSeat;
@@ -107,6 +110,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
 
   function clearSeat(seatNo = activeSeat) {
     setSaved(false);
+    setHasUnsavedChanges(true);
     setDraftMembers((current) => current.filter((member) => member.seat_no !== seatNo));
   }
 
@@ -117,6 +121,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
       ...draftMembers.filter((member) => member.customer_id)
     ]);
     setSaved(true);
+    setHasUnsavedChanges(false);
   }
 
   function addCustomerToGroup() {
@@ -124,6 +129,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
     const emptySeat = seats.find((seat) => !draftMembers.some((member) => member.seat_no === seat));
     setActiveSeat(emptySeat ?? group.seats_total);
     setSaved(false);
+    setHasUnsavedChanges(true);
   }
 
   const selectedCustomer = customers.find((customer) => customer.id === activeMember?.customer_id);
@@ -259,6 +265,11 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
           </CardContent>
         </Card>
       </div>
+      {hasUnsavedChanges ? (
+        <div className="fixed inset-x-0 bottom-[72px] z-40 border-y border-blue-500/30 bg-slate-950/95 p-3 shadow-2xl backdrop-blur lg:hidden">
+          <Button type="button" className="w-full" onClick={saveChanges}><Save className="h-4 w-4" /> Save changes</Button>
+        </div>
+      ) : null}
     </div>
   );
 }

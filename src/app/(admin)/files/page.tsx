@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { Check, Copy, Eye, FolderPlus, Pencil, Trash2, Upload } from "lucide-react";
@@ -138,7 +138,7 @@ export default function FilesPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader><CardTitle>Folders</CardTitle></CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <CardContent className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 xl:grid-cols-3">
               {fileFolders.map((folder) => (
                 <div key={folder.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
                   <div className="mb-3 flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: folder.color ?? "#3b82f6" }} /><p className="font-medium">{folder.name}</p></div>
@@ -160,7 +160,7 @@ export default function FilesPage() {
             <CardContent>
               {saved ? <p className="mb-4 rounded-md border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-100">{saved}</p> : null}
               {filteredFiles.length === 0 ? <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">{t("empty")}</div> : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
                   {filteredFiles.map((file) => (
                     <div key={file.id} className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/70">
                       <button type="button" onClick={() => setPreviewFile(file)} className="block aspect-video w-full bg-slate-900">
@@ -168,7 +168,7 @@ export default function FilesPage() {
                       </button>
                       <div className="space-y-2 p-4">
                         <p className="font-medium">{file.file_name}</p>
-                        <p className="text-xs text-muted-foreground">{file.file_type ?? "file"} · {formatSize(file.file_size)} · {formatDate(file.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">{file.file_type ?? "file"} / {formatSize(file.file_size)} / {formatDate(file.created_at)}</p>
                         <p className="text-sm text-muted-foreground">{file.note}</p>
                         <div className="flex flex-wrap gap-2">
                           <Button size="sm" variant="outline" onClick={() => setPreviewFile(file)}><Eye className="h-4 w-4" /> Preview</Button>
@@ -196,3 +196,4 @@ export default function FilesPage() {
     </div>
   );
 }
+

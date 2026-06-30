@@ -37,7 +37,7 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader title={t("settings")} description="Configure website branding, integrations, and operational defaults." />
-      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <Card>
           <CardHeader><CardTitle>{t("websiteSettings")}</CardTitle></CardHeader>
           <CardContent>

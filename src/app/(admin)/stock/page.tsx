@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useMemo, useState } from "react";
 import { Check, Copy, DollarSign, Pencil, Plus, Trash2 } from "lucide-react";
@@ -115,6 +115,8 @@ export default function StockPage() {
     window.setTimeout(() => setCopied(null), 1300);
   }
 
+  const maskedPassword = "********";
+
   return (
     <div>
       <PageHeader title={t("stock")} description="Manage app accounts that are not sold or assigned to a group yet." action={<Button onClick={startNew}><Plus className="h-4 w-4" /> New stock account</Button>} />
@@ -131,33 +133,36 @@ export default function StockPage() {
         ].map(([label, value]) => <Card key={label}><CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">{label}</CardTitle></CardHeader><CardContent className="text-xl font-semibold">{value}</CardContent></Card>)}
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_400px]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="space-y-6">
           <Card>
             <CardHeader className="gap-4 lg:flex-row lg:items-center lg:justify-between">
               <CardTitle>{t("stock")}</CardTitle>
-              <div className="grid gap-2 sm:grid-cols-3">
+              <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto xl:grid-cols-3">
                 <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search app, email, label, supplier" />
                 <Select value={filterApp} onChange={(event) => setFilterApp(event.target.value)}><option value="all">All apps</option>{apps.map((app) => <option key={app.id} value={app.id}>{app.name}</option>)}</Select>
                 <Select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value as "all" | StockStatus)}><option value="all">All status</option>{statuses.map((status) => <option key={status} value={status}>{t(status)}</option>)}</Select>
               </div>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent>
               {filtered.length === 0 ? <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">{t("empty")}</div> : (
-                <Table><TableHeader><TableRow><TableHead>Account</TableHead><TableHead>Email</TableHead><TableHead>Password</TableHead><TableHead>Status</TableHead><TableHead>Cost</TableHead><TableHead>Price</TableHead><TableHead>Expiry</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{filtered.map((account) => { const app = apps.find((item) => item.id === account.app_id); return <TableRow key={account.id}><TableCell><div className="flex items-center gap-3">{account.image_url ? <img src={account.image_url} alt="" className="h-10 w-10 rounded-lg border border-blue-500/30 object-cover" /> : <DollarSign className="h-8 w-8 rounded-lg border border-blue-500/30 p-1 text-blue-300" />}<div><p className="font-medium">{account.label}</p><p className="text-xs text-muted-foreground">{app?.name} · {account.supplier}</p></div></div></TableCell><TableCell><div className="flex items-center gap-2"><span>{account.login_email}</span><Button size="sm" variant="outline" onClick={() => copyText(`${account.id}-email`, account.login_email)}>{copied === `${account.id}-email` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button></div></TableCell><TableCell><div className="flex items-center gap-2"><code className="rounded-md border bg-slate-950 px-2 py-1 text-xs text-blue-100">{account.password}</code><Button size="sm" variant="outline" onClick={() => copyText(`${account.id}-password`, account.password ?? "")}>{copied === `${account.id}-password` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button></div></TableCell><TableCell><StatusBadge status={t(account.status)} /></TableCell><TableCell>{formatCurrency(account.cost)}</TableCell><TableCell>{formatCurrency(account.selling_price)}</TableCell><TableCell>{account.expiry_date ? formatDate(account.expiry_date) : "-"}</TableCell><TableCell><div className="flex flex-wrap justify-end gap-2"><Button size="sm" variant="outline" onClick={() => updateStatus(account.id, "sold")}>{t("sold")}</Button><Button size="sm" variant="outline" onClick={() => updateStatus(account.id, "reserved")}>{t("reserved")}</Button><Button size="sm" variant="outline" onClick={() => updateStatus(account.id, "available")}>{t("available")}</Button><Button size="sm" variant="outline" onClick={() => startEdit(account)}><Pencil className="h-4 w-4" /></Button><Button size="sm" variant="destructive" onClick={() => deleteStock(account.id)}><Trash2 className="h-4 w-4" /></Button></div></TableCell></TableRow>; })}</TableBody></Table>
+                <>
+                <div className="hidden overflow-x-auto lg:block"><Table><TableHeader><TableRow><TableHead>Account</TableHead><TableHead>Email</TableHead><TableHead>Password</TableHead><TableHead>Status</TableHead><TableHead>Cost</TableHead><TableHead>Price</TableHead><TableHead>Expiry</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{filtered.map((account) => { const app = apps.find((item) => item.id === account.app_id); return <TableRow key={account.id}><TableCell><div className="flex items-center gap-3">{account.image_url ? <img src={account.image_url} alt="" className="h-10 w-10 rounded-lg border border-blue-500/30 object-cover" /> : <DollarSign className="h-8 w-8 rounded-lg border border-blue-500/30 p-1 text-blue-300" />}<div><p className="font-medium">{account.label}</p><p className="text-xs text-muted-foreground">{app?.name} / {account.supplier}</p></div></div></TableCell><TableCell><div className="flex items-center gap-2"><span>{account.login_email}</span><Button size="sm" variant="outline" onClick={() => copyText(`${account.id}-email`, account.login_email)}>{copied === `${account.id}-email` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button></div></TableCell><TableCell><div className="flex items-center gap-2"><code className="rounded-md border bg-slate-950 px-2 py-1 text-xs text-blue-100">{maskedPassword}</code><Button size="sm" variant="outline" onClick={() => copyText(`${account.id}-password`, account.password ?? "")}>{copied === `${account.id}-password` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button></div></TableCell><TableCell><StatusBadge status={t(account.status)} /></TableCell><TableCell>{formatCurrency(account.cost)}</TableCell><TableCell>{formatCurrency(account.selling_price)}</TableCell><TableCell>{account.expiry_date ? formatDate(account.expiry_date) : "-"}</TableCell><TableCell><div className="flex flex-wrap justify-end gap-2"><Button size="sm" variant="outline" onClick={() => updateStatus(account.id, "sold")}>{t("sold")}</Button><Button size="sm" variant="outline" onClick={() => updateStatus(account.id, "reserved")}>{t("reserved")}</Button><Button size="sm" variant="outline" onClick={() => updateStatus(account.id, "available")}>{t("available")}</Button><Button size="sm" variant="outline" onClick={() => startEdit(account)}><Pencil className="h-4 w-4" /></Button><Button size="sm" variant="destructive" onClick={() => deleteStock(account.id)}><Trash2 className="h-4 w-4" /></Button></div></TableCell></TableRow>; })}</TableBody></Table></div>
+                <div className="grid gap-3 lg:hidden">{filtered.map((account) => { const app = apps.find((item) => item.id === account.app_id); return <div key={account.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{account.label}</p><p className="mt-1 text-sm text-muted-foreground">{app?.name ?? "-"}</p></div><StatusBadge status={t(account.status)} /></div><div className="mt-4 space-y-3 text-sm"><div><p className="text-muted-foreground">Email</p><div className="mt-1 flex gap-2"><span className="min-w-0 flex-1 break-all text-slate-200">{account.login_email}</span><Button variant="outline" onClick={() => copyText(`${account.id}-email`, account.login_email)}>{copied === `${account.id}-email` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button></div></div><div><p className="text-muted-foreground">Password</p><div className="mt-1 flex gap-2"><code className="min-w-0 flex-1 truncate rounded-md border bg-slate-950 px-2 py-2 text-xs text-blue-100">{maskedPassword}</code><Button variant="outline" onClick={() => copyText(`${account.id}-password`, account.password ?? "")}>{copied === `${account.id}-password` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</Button></div></div><div className="grid grid-cols-2 gap-3"><div><p className="text-muted-foreground">Expiry</p><p>{account.expiry_date ? formatDate(account.expiry_date) : "-"}</p></div><div><p className="text-muted-foreground">Price</p><p>{formatCurrency(account.selling_price)}</p></div></div></div><div className="mt-4 grid grid-cols-3 gap-2"><Button variant="outline" onClick={() => updateStatus(account.id, "sold")}>{t("sold")}</Button><Button variant="outline" onClick={() => updateStatus(account.id, "reserved")}>{t("reserved")}</Button><Button variant="outline" onClick={() => updateStatus(account.id, "available")}>{t("available")}</Button></div><div className="mt-2 grid grid-cols-2 gap-2"><Button variant="outline" onClick={() => startEdit(account)}><Pencil className="h-4 w-4" /> {t("edit")}</Button><Button variant="destructive" onClick={() => deleteStock(account.id)}><Trash2 className="h-4 w-4" /> {t("delete")}</Button></div></div>; })}</div>
+                </>
               )}
             </CardContent>
           </Card>
         </div>
 
-        <Card className="xl:sticky xl:top-6 xl:self-start">
+        <Card className="2xl:sticky 2xl:top-6 2xl:self-start">
           <CardHeader><CardTitle>{editingId ? t("edit") : "Add stock account"}</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={saveStock} className="space-y-4">
               <div><Label>App</Label><Select value={form.app_id || apps[0]?.id || ""} onChange={(event) => setForm({ ...form, app_id: event.target.value })}>{apps.map((app) => <option key={app.id} value={app.id}>{app.name}</option>)}</Select></div>
               <div><Label>Label</Label><Input value={form.label} onChange={(event) => setForm({ ...form, label: event.target.value })} /></div>
               <div><Label>Login email</Label><Input value={form.login_email} onChange={(event) => setForm({ ...form, login_email: event.target.value })} /></div>
-              <div><Label>Password</Label><Input value={form.password ?? ""} onChange={(event) => setForm({ ...form, password: event.target.value })} /></div>
+              <div><Label>Password</Label><Input type="password" value={form.password ?? ""} onChange={(event) => setForm({ ...form, password: event.target.value })} /></div>
               <div className="grid gap-3 sm:grid-cols-2"><div><Label>Account type</Label><Select value={form.account_type} onChange={(event) => setForm({ ...form, account_type: event.target.value as AccountType })}><option value="private">{t("private")}</option><option value="shared">{t("shared")}</option></Select></div><div><Label>Status</Label><Select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as StockStatus })}>{statuses.map((status) => <option key={status} value={status}>{t(status)}</option>)}</Select></div></div>
               <div className="grid gap-3 sm:grid-cols-2"><div><Label>Cost</Label><Input type="number" value={form.cost} onChange={(event) => setForm({ ...form, cost: Number(event.target.value) })} /></div><div><Label>Selling price</Label><Input type="number" value={form.selling_price} onChange={(event) => setForm({ ...form, selling_price: Number(event.target.value) })} /></div></div>
               <div className="grid gap-3 sm:grid-cols-2"><div><Label>Purchase date</Label><Input type="date" value={form.purchase_date ?? ""} onChange={(event) => setForm({ ...form, purchase_date: event.target.value })} /></div><div><Label>Expiry date</Label><Input type="date" value={form.expiry_date ?? ""} onChange={(event) => setForm({ ...form, expiry_date: event.target.value })} /></div></div>
@@ -175,3 +180,4 @@ export default function StockPage() {
     </div>
   );
 }
+
