@@ -7,9 +7,9 @@ export const apps: AppRecord[] = [
 ];
 
 export const serviceAccounts: ServiceAccount[] = [
-  { id: "svc-1", app_id: "app-stream", label: "StreamBox Main", login_email: "admin.streambox@example.test", password_encrypted: "mock_encrypted_value_1", password_hint: "str", expiry_date: "2026-07-05", cost: 58, note: "Renew with annual discount" },
-  { id: "svc-2", app_id: "app-design", label: "DesignCloud Team", login_email: "billing.designcloud@example.test", password_encrypted: "mock_encrypted_value_2", password_hint: "des", expiry_date: "2026-07-20", cost: 96, note: "Owner MFA enabled" },
-  { id: "svc-3", app_id: "app-ai", label: "AI Studio North", login_email: "ops.aistudio@example.test", password_encrypted: "mock_encrypted_value_3", password_hint: "ais", expiry_date: "2026-06-29", cost: 120, note: "Paused for review" }
+  { id: "svc-1", app_id: "app-stream", label: "StreamBox Main", login_email: "admin.streambox@example.test", account_type: "shared", password_encrypted: "mock_encrypted_value_1", password_hint: "str", expiry_date: "2026-07-05", cost: 58, note: "Renew with annual discount" },
+  { id: "svc-2", app_id: "app-design", label: "DesignCloud Team", login_email: "billing.designcloud@example.test", account_type: "shared", password_encrypted: "mock_encrypted_value_2", password_hint: "des", expiry_date: "2026-07-20", cost: 96, note: "Owner MFA enabled" },
+  { id: "svc-3", app_id: "app-ai", label: "AI Studio North", login_email: "ops.aistudio@example.test", account_type: "private", password_encrypted: "mock_encrypted_value_3", password_hint: "ais", expiry_date: "2026-06-29", cost: 120, note: "Paused for review" }
 ];
 
 export const shareGroups: ShareGroup[] = [
@@ -35,11 +35,11 @@ export const groupMembers: GroupMember[] = [
 ];
 
 export const transactions: Transaction[] = [
-  { id: "txn-1", type: "income", amount: 18, category: "Seat payment", app_id: "app-stream", group_id: "grp-1", customer_id: "cus-1", date: "2026-06-20", note: "Seat 1", slip_url: null },
-  { id: "txn-2", type: "income", amount: 7, category: "Partial seat payment", app_id: "app-stream", group_id: "grp-1", customer_id: "cus-3", date: "2026-06-22", note: "Partial", slip_url: null },
-  { id: "txn-3", type: "income", amount: 64, category: "Seat payment", app_id: "app-design", group_id: "grp-2", customer_id: null, date: "2026-06-18", note: "Two seats", slip_url: null },
-  { id: "txn-4", type: "expense", amount: 58, category: "Subscription cost", app_id: "app-stream", group_id: "grp-1", customer_id: null, date: "2026-06-01", note: "Mock service cost", slip_url: null },
-  { id: "txn-5", type: "expense", amount: 96, category: "Subscription cost", app_id: "app-design", group_id: "grp-2", customer_id: null, date: "2026-06-02", note: "Mock service cost", slip_url: null }
+  { id: "txn-1", type: "income", amount: 18, category: "Seat payment", app_id: "app-stream", group_id: "grp-1", customer_id: "cus-1", date: "2026-06-20", note: "Seat 1", slip_url: null, color: "#10b981" },
+  { id: "txn-2", type: "income", amount: 7, category: "Partial seat payment", app_id: "app-stream", group_id: "grp-1", customer_id: "cus-3", date: "2026-06-22", note: "Partial", slip_url: null, color: "#22c55e" },
+  { id: "txn-3", type: "income", amount: 64, category: "Seat payment", app_id: "app-design", group_id: "grp-2", customer_id: null, date: "2026-06-18", note: "Two seats", slip_url: null, color: "#14b8a6" },
+  { id: "txn-4", type: "expense", amount: 58, category: "Subscription cost", app_id: "app-stream", group_id: "grp-1", customer_id: null, date: "2026-06-01", note: "Mock service cost", slip_url: null, color: "#ef4444" },
+  { id: "txn-5", type: "expense", amount: 96, category: "Subscription cost", app_id: "app-design", group_id: "grp-2", customer_id: null, date: "2026-06-02", note: "Mock service cost", slip_url: null, color: "#f97316" }
 ];
 
 export const telegramSettings: TelegramSettings[] = [
