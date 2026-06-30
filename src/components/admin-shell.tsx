@@ -1,19 +1,27 @@
-import Link from "next/link";
-import { BarChart3, BellRing, CreditCard, LayoutDashboard, LogOut, Package, Settings, Shield, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/apps", label: "Apps", icon: Package },
-  { href: "/accounts", label: "Accounts", icon: Shield },
-  { href: "/groups", label: "Groups", icon: Users },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/accounting", label: "Accounting", icon: BarChart3 },
-  { href: "/settings/telegram", label: "Telegram", icon: BellRing },
-  { href: "/settings", label: "Settings", icon: Settings }
+import Link from "next/link";
+import { BarChart3, BellRing, CreditCard, LayoutDashboard, LogOut, Package, Repeat2, Settings, Shield, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/form";
+import { useLanguage } from "@/hooks/use-language";
+import type { TranslationKey } from "@/lib/i18n";
+
+const navItems: { href: string; labelKey: TranslationKey; icon: typeof LayoutDashboard }[] = [
+  { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { href: "/apps", labelKey: "apps", icon: Package },
+  { href: "/accounts", labelKey: "serviceAccounts", icon: Shield },
+  { href: "/groups", labelKey: "groups", icon: Users },
+  { href: "/customers", labelKey: "customers", icon: Users },
+  { href: "/groups", labelKey: "renewals", icon: Repeat2 },
+  { href: "/accounting", labelKey: "accounting", icon: BarChart3 },
+  { href: "/settings/telegram", labelKey: "telegram", icon: BellRing },
+  { href: "/settings", labelKey: "settings", icon: Settings }
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
+  const { language, setLanguage, t } = useLanguage();
+
   return (
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="admin-band sticky top-0 z-30 lg:fixed lg:inset-y-0 lg:w-[260px] lg:border-r lg:border-b-0">
@@ -24,10 +32,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </Link>
           <form action="/logout" method="post" className="lg:hidden"><Button size="icon" variant="ghost" title="Log out"><LogOut className="h-4 w-4" /></Button></form>
         </div>
+        <div className="px-3 pb-3 lg:px-4">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">{t("language")}</label>
+          <Select value={language} onChange={(event) => setLanguage(event.target.value as "th" | "en")} className="h-9 bg-white">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+          </Select>
+        </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible lg:px-4">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="flex min-w-fit items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-              <item.icon className="h-4 w-4" /> {item.label}
+            <Link key={`${item.href}-${item.labelKey}`} href={item.href} className="flex min-w-fit items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+              <item.icon className="h-4 w-4" /> {t(item.labelKey)}
             </Link>
           ))}
         </nav>
