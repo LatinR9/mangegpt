@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import type { Transaction } from "@/lib/types";
 
 function toCsv(rows: Transaction[], excelCompatible: boolean) {
-  const header = ["type", "amount", "category", "app_id", "group_id", "customer_id", "date", "note", "slip_url"];
+  const header: (keyof Transaction)[] = ["type", "amount", "category", "app_id", "group_id", "customer_id", "date", "note", "slip_url", "color"];
   const body = rows.map((row) => header.map((key) => {
-    const value = String(row[key as keyof Transaction] ?? "");
+    const value = String(row[key] ?? "");
     return `"${value.replaceAll('"', '""')}"`;
   }).join(","));
   const csv = [header.join(","), ...body].join("\n");
