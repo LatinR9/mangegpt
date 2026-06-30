@@ -1,4 +1,4 @@
-import type { AppRecord, Customer, GroupMember, ServiceAccount, ShareGroup, TelegramSettings, Transaction } from "@/lib/types";
+﻿import type { AppRecord, Customer, GroupMember, ServiceAccount, ShareGroup, TelegramSettings, Transaction } from "@/lib/types";
 
 export const apps: AppRecord[] = [
   { id: "app-stream", name: "StreamBox", logo_url: "https://api.dicebear.com/8.x/shapes/svg?seed=StreamBox", color: "#0f766e", default_seats: 5, note: "Family streaming plan", status: "active" },
@@ -7,9 +7,9 @@ export const apps: AppRecord[] = [
 ];
 
 export const serviceAccounts: ServiceAccount[] = [
-  { id: "svc-1", app_id: "app-stream", label: "StreamBox Main", login_email: "admin.streambox@example.test", account_type: "shared", password_encrypted: "mock_encrypted_value_1", password_hint: "str", expiry_date: "2026-07-05", cost: 58, note: "Renew with annual discount" },
-  { id: "svc-2", app_id: "app-design", label: "DesignCloud Team", login_email: "billing.designcloud@example.test", account_type: "shared", password_encrypted: "mock_encrypted_value_2", password_hint: "des", expiry_date: "2026-07-20", cost: 96, note: "Owner MFA enabled" },
-  { id: "svc-3", app_id: "app-ai", label: "AI Studio North", login_email: "ops.aistudio@example.test", account_type: "private", password_encrypted: "mock_encrypted_value_3", password_hint: "ais", expiry_date: "2026-06-29", cost: 120, note: "Paused for review" }
+  { id: "svc-1", app_id: "app-stream", label: "StreamBox Main", login_email: "admin.streambox@example.test", account_type: "shared", password: "str-mock-private", password_encrypted: "mock_encrypted_value_1", password_hint: "str", expiry_date: "2026-07-05", cost: 58, note: "Renew with annual discount" },
+  { id: "svc-2", app_id: "app-design", label: "DesignCloud Team", login_email: "billing.designcloud@example.test", account_type: "shared", password: "des-mock-private", password_encrypted: "mock_encrypted_value_2", password_hint: "des", expiry_date: "2026-07-20", cost: 96, note: "Owner MFA enabled" },
+  { id: "svc-3", app_id: "app-ai", label: "AI Studio North", login_email: "ops.aistudio@example.test", account_type: "private", password: "ais-mock-private", password_encrypted: "mock_encrypted_value_3", password_hint: "ais", expiry_date: "2026-06-29", cost: 120, note: "Paused for review" }
 ];
 
 export const shareGroups: ShareGroup[] = [
@@ -43,5 +43,6 @@ export const transactions: Transaction[] = [
 ];
 
 export const telegramSettings: TelegramSettings[] = [
-  { id: "tg-1", bot_token_encrypted: "mock_encrypted_token", bot_token_hint: "bot", chat_id_encrypted: "mock_encrypted_chat", chat_id_hint: "cha", reminder_days_before_expiry: 3, enabled: true }
+  { id: "tg-1", bot_token: "", bot_token_encrypted: "mock_encrypted_token", bot_token_hint: "bot", chat_id: "", chat_id_encrypted: "mock_encrypted_chat", chat_id_hint: "cha", reminder_days_before: 3, reminder_days_before_expiry: 3, enabled: true }
 ];
+

@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 210 30% 98%;
-    --foreground: 224 32% 12%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 32% 12%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 32% 12%;
-    --primary: 182 72% 28%;
-    --primary-foreground: 180 38% 96%;
-    --secondary: 210 20% 92%;
-    --secondary-foreground: 224 32% 12%;
-    --muted: 210 20% 94%;
-    --muted-foreground: 220 10% 42%;
-    --accent: 43 93% 88%;
-    --accent-foreground: 29 60% 18%;
-    --destructive: 0 72% 50%;
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --card: 224 44% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 44% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 70%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 18% 86%;
-    --input: 214 18% 86%;
-    --ring: 182 72% 28%;
+    --border: 215 28% 22%;
+    --input: 215 28% 22%;
+    --ring: 217 91% 60%;
     --radius: 0.5rem;
   }
 
@@ -32,11 +32,17 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(37, 99, 235, 0.22), transparent 28rem),
+      radial-gradient(circle at 95% 10%, rgba(59, 130, 246, 0.16), transparent 26rem),
+      radial-gradient(rgba(59, 130, 246, 0.16) 1px, transparent 1px),
+      #02040a;
+    background-size: auto, auto, 24px 24px, auto;
   }
 }
 
 @layer components {
   .admin-band {
-    @apply border-b bg-white/85 backdrop-blur;
+    @apply border-b border-slate-800/90 bg-slate-950/90 backdrop-blur-xl;
   }
 }

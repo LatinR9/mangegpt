@@ -21,6 +21,7 @@ export type ServiceAccount = {
   label: string;
   login_email: string;
   account_type: AccountType;
+  password: string | null;
   password_encrypted: string | null;
   password_hint: string | null;
   expiry_date: string;
@@ -79,10 +80,13 @@ export type Transaction = {
 
 export type TelegramSettings = {
   id: string;
+  bot_token: string | null;
   bot_token_encrypted: string | null;
   bot_token_hint: string | null;
+  chat_id: string | null;
   chat_id_encrypted: string | null;
   chat_id_hint: string | null;
+  reminder_days_before: number;
   reminder_days_before_expiry: number;
   enabled: boolean;
 };

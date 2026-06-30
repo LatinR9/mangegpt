@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { BarChart3, BellRing, CreditCard, LayoutDashboard, LogOut, Package, Repeat2, Settings, Shield, Users } from "lucide-react";
@@ -23,26 +23,26 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const { language, setLanguage, t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="admin-band sticky top-0 z-30 lg:fixed lg:inset-y-0 lg:w-[260px] lg:border-r lg:border-b-0">
-        <div className="flex h-16 items-center justify-between px-4 lg:h-20 lg:items-start lg:flex-col lg:justify-center">
+    <div className="min-h-screen bg-transparent lg:grid lg:grid-cols-[280px_1fr]">
+      <aside className="admin-band sticky top-0 z-30 lg:fixed lg:inset-y-0 lg:w-[280px] lg:border-r lg:border-b-0">
+        <div className="flex h-16 items-center justify-between px-4 lg:h-24 lg:items-start lg:flex-col lg:justify-center">
           <Link href="/dashboard" className="flex items-center gap-3 font-semibold">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground"><CreditCard className="h-5 w-5" /></span>
-            <span>SubGroup Manager</span>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/40 bg-blue-500/15 text-blue-200 shadow-lg shadow-blue-950/40"><CreditCard className="h-5 w-5" /></span>
+            <span className="text-slate-50">SubGroup Manager</span>
           </Link>
           <form action="/logout" method="post" className="lg:hidden"><Button size="icon" variant="ghost" title="Log out"><LogOut className="h-4 w-4" /></Button></form>
         </div>
         <div className="px-3 pb-3 lg:px-4">
           <label className="mb-1 block text-xs font-medium text-muted-foreground">{t("language")}</label>
-          <Select value={language} onChange={(event) => setLanguage(event.target.value as "th" | "en")} className="h-9 bg-white">
-            <option value="th">ไทย</option>
+          <Select value={language} onChange={(event) => setLanguage(event.target.value as "th" | "en")} className="h-9">
+            <option value="th">Thai</option>
             <option value="en">English</option>
           </Select>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible lg:px-4">
           {navItems.map((item) => (
-            <Link key={`${item.href}-${item.labelKey}`} href={item.href} className="flex min-w-fit items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-              <item.icon className="h-4 w-4" /> {t(item.labelKey)}
+            <Link key={`${item.href}-${item.labelKey}`} href={item.href} className="flex min-w-fit items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-sm font-medium text-slate-400 transition hover:border-blue-500/30 hover:bg-blue-500/10 hover:text-white">
+              <item.icon className="h-4 w-4 text-blue-300" /> {t(item.labelKey)}
             </Link>
           ))}
         </nav>
