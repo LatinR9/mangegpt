@@ -15,7 +15,13 @@ function missingEnvResponse() {
 }
 
 function serializeError(error: unknown) {
-  return error instanceof Error ? error.message : "Unknown Supabase error.";
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const err = error as { message?: string; details?: string; hint?: string; code?: string };
+    const parts = [err.message, err.details, err.hint, err.code].filter(Boolean);
+    return parts.length ? parts.join(" | ") : JSON.stringify(error);
+  }
+  return String(error);
 }
 
 async function fetchTable(table: AdminTableName) {
@@ -75,6 +81,7 @@ export async function GET(request: NextRequest) {
       telegram_settings: telegramSettings?.[0] ?? null
     });
   } catch (error) {
+    console.error("Supabase API error:", error);
     return NextResponse.json({ error: serializeError(error) }, { status: 500 });
   }
 }
@@ -100,6 +107,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ error: "Unknown table." }, { status: 400 });
   } catch (error) {
+    console.error("Supabase API error:", error);
     return NextResponse.json({ error: serializeError(error) }, { status: 500 });
   }
 }

@@ -22,7 +22,7 @@ function formatSize(size: number | null) {
 }
 
 export default function FilesPage() {
-  const { fileFolders, setFileFolders, uploadedFiles, setUploadedFiles } = useAdminData();
+  const { fileFolders, setFileFolders, uploadedFiles, setUploadedFiles, isSupabaseEnabled, refreshData } = useAdminData();
   const { t } = useLanguage();
   const [folderForm, setFolderForm] = useState(emptyFolder);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
@@ -33,6 +33,7 @@ export default function FilesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const filteredFiles = useMemo(() => uploadedFiles.filter((file) => {
     const folderOk = filterFolder === "all" || file.folder_id === filterFolder;
@@ -41,8 +42,30 @@ export default function FilesPage() {
     return folderOk && searchOk;
   }), [filterFolder, query, uploadedFiles]);
 
-  function saveFolder(event: FormEvent<HTMLFormElement>) {
+  async function readApiError(response: Response) {
+    const result = await response.json().catch(() => ({}));
+    return typeof result.error === "string" ? result.error : `Request failed with status ${response.status}.`;
+  }
+
+  async function saveJson<T>(url: string, method: "POST" | "PATCH", payload: T) {
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(await readApiError(response));
+    return response.json().catch(() => ({}));
+  }
+
+  async function deleteById(url: string, id: string) {
+    const response = await fetch(`${url}?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(await readApiError(response));
+  }
+
+  async function saveFolder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setApiError(null);
+    setSaved(null);
     const payload: FileFolder = {
       id: editingFolderId ?? createId("folder"),
       name: folderForm.name.trim() || "New folder",
@@ -50,10 +73,19 @@ export default function FilesPage() {
       note: folderForm.note.trim() || null,
       created_at: editingFolderId ? fileFolders.find((folder) => folder.id === editingFolderId)?.created_at ?? new Date().toISOString() : new Date().toISOString()
     };
-    setFileFolders((current) => editingFolderId ? current.map((folder) => folder.id === editingFolderId ? payload : folder) : [payload, ...current]);
-    setFolderForm(emptyFolder);
-    setEditingFolderId(null);
-    setSaved("Folder saved.");
+    try {
+      if (isSupabaseEnabled) {
+        await saveJson("/api/file-folders", editingFolderId ? "PATCH" : "POST", payload);
+        await refreshData();
+      } else {
+        setFileFolders((current) => editingFolderId ? current.map((folder) => folder.id === editingFolderId ? payload : folder) : [payload, ...current]);
+      }
+      setFolderForm(emptyFolder);
+      setEditingFolderId(null);
+      setSaved("Folder saved.");
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Folder save failed.");
+    }
   }
 
   function editFolder(folder: FileFolder) {
@@ -61,10 +93,22 @@ export default function FilesPage() {
     setFolderForm({ name: folder.name, color: folder.color ?? "#3b82f6", note: folder.note ?? "" });
   }
 
-  function deleteFolder(id: string) {
+  async function deleteFolder(id: string) {
     if (!window.confirm("Delete this folder and its files?")) return;
-    setFileFolders((current) => current.filter((folder) => folder.id !== id));
-    setUploadedFiles((current) => current.filter((file) => file.folder_id !== id));
+    setApiError(null);
+    setSaved(null);
+    try {
+      if (isSupabaseEnabled) {
+        await deleteById("/api/file-folders", id);
+        await refreshData();
+      } else {
+        setFileFolders((current) => current.filter((folder) => folder.id !== id));
+        setUploadedFiles((current) => current.filter((file) => file.folder_id !== id));
+      }
+      setSaved("Folder deleted.");
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Folder delete failed.");
+    }
   }
 
   async function uploadBrowserFile(file: File) {
@@ -81,13 +125,14 @@ export default function FilesPage() {
 
   async function saveFile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const supabaseEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    setApiError(null);
+    setSaved(null);
     let fileUrl = fileForm.file_url.trim();
     let fileName = fileForm.file_name.trim();
     let fileType = fileForm.file_type.trim() || null;
     let fileSize = Number(fileForm.file_size) || null;
 
-    if (browserFile && supabaseEnabled) {
+    if (browserFile && isSupabaseEnabled) {
       try {
         const uploaded = await uploadBrowserFile(browserFile);
         fileUrl = uploaded.file_url;
@@ -95,9 +140,14 @@ export default function FilesPage() {
         fileType = uploaded.file_type;
         fileSize = uploaded.file_size;
       } catch (error) {
-        setSaved(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
+        setApiError(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
         return;
       }
+    }
+
+    if (fileUrl.startsWith("blob:")) {
+      setApiError("Blob preview URLs cannot be saved. Upload the file to Supabase Storage or paste a permanent URL.");
+      return;
     }
 
     const payload: UploadedFile = {
@@ -110,11 +160,24 @@ export default function FilesPage() {
       note: fileForm.note.trim() || null,
       created_at: new Date().toISOString()
     };
-    if (!payload.file_url) return setSaved("Add a file URL or choose a browser file preview first.");
-    setUploadedFiles((current) => [payload, ...current]);
-    setFileForm({ ...emptyFile, folder_id: payload.folder_id });
-    setBrowserFile(null);
-    setSaved(browserFile && supabaseEnabled ? "File uploaded to Supabase Storage." : "File added.");
+    if (!payload.file_url) {
+      setApiError("Add a permanent file URL or upload a browser file to Supabase Storage first.");
+      return;
+    }
+
+    try {
+      if (isSupabaseEnabled) {
+        await saveJson("/api/uploaded-files", "POST", payload);
+        await refreshData();
+      } else {
+        setUploadedFiles((current) => [payload, ...current]);
+      }
+      setFileForm({ ...emptyFile, folder_id: payload.folder_id });
+      setBrowserFile(null);
+      setSaved(browserFile && isSupabaseEnabled ? "File uploaded to Supabase Storage." : "File added.");
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "File save failed.");
+    }
   }
 
   function handleBrowserFile(event: ChangeEvent<HTMLInputElement>) {
@@ -137,6 +200,22 @@ export default function FilesPage() {
     window.setTimeout(() => setCopiedId(null), 1300);
   }
 
+  async function deleteFile(id: string) {
+    setApiError(null);
+    setSaved(null);
+    try {
+      if (isSupabaseEnabled) {
+        await deleteById("/api/uploaded-files", id);
+        await refreshData();
+      } else {
+        setUploadedFiles((current) => current.filter((item) => item.id !== id));
+      }
+      setSaved("File deleted.");
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "File delete failed.");
+    }
+  }
+
   return (
     <div>
       <PageHeader title={t("files")} description="Private image and file library for slips, product images, account screenshots, and business files." />
@@ -145,6 +224,7 @@ export default function FilesPage() {
           <Card>
             <CardHeader><CardTitle>{t("createFolder")}</CardTitle></CardHeader>
             <CardContent>
+              {apiError ? <p className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">{apiError}</p> : null}
               <form onSubmit={saveFolder} className="space-y-4">
                 <div><Label>Folder name</Label><Input value={folderForm.name} onChange={(event) => setFolderForm({ ...folderForm, name: event.target.value })} /></div>
                 <div><Label>Color</Label><Input type="color" value={folderForm.color} onChange={(event) => setFolderForm({ ...folderForm, color: event.target.value })} /></div>
@@ -192,6 +272,7 @@ export default function FilesPage() {
               </div>
             </CardHeader>
             <CardContent>
+              {apiError ? <p className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">{apiError}</p> : null}
               {saved ? <p className="mb-4 rounded-md border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-100">{saved}</p> : null}
               {filteredFiles.length === 0 ? <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">{t("empty")}</div> : (
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -207,7 +288,7 @@ export default function FilesPage() {
                         <div className="grid gap-2 min-[430px]:grid-cols-2">
                           <Button size="sm" variant="outline" onClick={() => setPreviewFile(file)}><Eye className="h-4 w-4" /> Preview</Button>
                           <Button size="sm" variant="outline" onClick={() => copyUrl(file)}>{copiedId === file.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copiedId === file.id ? "Copied" : "URL"}</Button>
-                          <Button size="sm" variant="destructive" className="min-[430px]:col-span-2" onClick={() => setUploadedFiles((current) => current.filter((item) => item.id !== file.id))}><Trash2 className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="destructive" className="min-[430px]:col-span-2" onClick={() => deleteFile(file.id)}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
                     </div>
