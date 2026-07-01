@@ -25,6 +25,41 @@ function errorResponse(error: unknown) {
   return NextResponse.json({ error: serializeError(error) }, { status: 500 });
 }
 
+function isValidDateValue(value: unknown) {
+  if (value instanceof Date) return !Number.isNaN(value.getTime());
+  if (typeof value === "string" || typeof value === "number") return !Number.isNaN(new Date(value).getTime());
+  return false;
+}
+
+function cleanNewRowForSupabase(row: Record<string, unknown>) {
+  const now = new Date().toISOString();
+  const cleaned = { ...row };
+
+  if (!cleaned.created_at || !isValidDateValue(cleaned.created_at)) {
+    cleaned.created_at = now;
+  }
+
+  if (!cleaned.updated_at || !isValidDateValue(cleaned.updated_at)) {
+    cleaned.updated_at = now;
+  }
+
+  return cleaned;
+}
+
+function cleanUpdateForSupabase(row: Record<string, unknown>) {
+  const cleaned = { ...row };
+
+  if ("created_at" in cleaned && (!cleaned.created_at || !isValidDateValue(cleaned.created_at))) {
+    delete cleaned.created_at;
+  }
+
+  if ("updated_at" in cleaned && (!cleaned.updated_at || !isValidDateValue(cleaned.updated_at))) {
+    delete cleaned.updated_at;
+  }
+
+  return { ...cleaned, updated_at: new Date().toISOString() };
+}
+
 async function readRow(request: NextRequest) {
   const body = await request.json();
   return (body?.row ?? body) as Partial<FileFolder>;
@@ -53,7 +88,7 @@ export async function POST(request: NextRequest) {
     const row = await readRow(request);
     if (!row.id || !row.name) return NextResponse.json({ error: "Folder id and name are required." }, { status: 400 });
 
-    const { data, error } = await supabase.from("file_folders").insert(row).select("*").single();
+    const { data, error } = await supabase.from("file_folders").insert(cleanNewRowForSupabase(row as Record<string, unknown>)).select("*").single();
     if (error) throw error;
     return NextResponse.json({ data });
   } catch (error) {
@@ -71,7 +106,7 @@ export async function PATCH(request: NextRequest) {
     if (!row.id) return NextResponse.json({ error: "Folder id is required." }, { status: 400 });
 
     const { id, ...updates } = row;
-    const { data, error } = await supabase.from("file_folders").update(updates).eq("id", id).select("*").single();
+    const { data, error } = await supabase.from("file_folders").update(cleanUpdateForSupabase(updates as Record<string, unknown>)).eq("id", id).select("*").single();
     if (error) throw error;
     return NextResponse.json({ data });
   } catch (error) {

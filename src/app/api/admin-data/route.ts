@@ -31,16 +31,15 @@ function isValidDateValue(value: unknown) {
 }
 
 function cleanRowForSupabase(row: Record<string, unknown>) {
+  const now = new Date().toISOString();
   const cleaned = { ...row };
 
-  if (cleaned.created_at == null || cleaned.created_at === "") {
-    delete cleaned.created_at;
+  if (!cleaned.created_at || !isValidDateValue(cleaned.created_at)) {
+    cleaned.created_at = now;
   }
 
-  if (cleaned.updated_at == null || cleaned.updated_at === "") {
-    delete cleaned.updated_at;
-  } else if (!isValidDateValue(cleaned.updated_at)) {
-    cleaned.updated_at = new Date().toISOString();
+  if (!cleaned.updated_at || !isValidDateValue(cleaned.updated_at)) {
+    cleaned.updated_at = now;
   }
 
   return cleaned;
@@ -60,7 +59,10 @@ async function syncTable(table: AdminTableName, rows: Record<string, unknown>[])
 
   if (rows.length > 0) {
     const cleanedRows = rows.map(cleanRowForSupabase);
-    const { error: upsertError } = await supabase.from(table).upsert(cleanedRows, { onConflict: "id" });
+    const { error: upsertError } = await supabase.from(table).upsert(cleanedRows, {
+      onConflict: "id",
+      defaultToNull: false
+    });
     if (upsertError) throw upsertError;
   }
 
@@ -78,7 +80,10 @@ async function syncTable(table: AdminTableName, rows: Record<string, unknown>[])
 async function syncSingle(table: "app_settings" | "telegram_settings", row: Record<string, unknown>) {
   const supabase = createServiceSupabaseClient();
   if (!supabase) throw new Error("Supabase service client is not configured.");
-  const { error } = await supabase.from(table).upsert(cleanRowForSupabase(row), { onConflict: "id" });
+  const { error } = await supabase.from(table).upsert(cleanRowForSupabase(row), {
+    onConflict: "id",
+    defaultToNull: false
+  });
   if (error) throw error;
 }
 

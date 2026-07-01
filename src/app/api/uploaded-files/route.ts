@@ -25,6 +25,41 @@ function errorResponse(error: unknown) {
   return NextResponse.json({ error: serializeError(error) }, { status: 500 });
 }
 
+function isValidDateValue(value: unknown) {
+  if (value instanceof Date) return !Number.isNaN(value.getTime());
+  if (typeof value === "string" || typeof value === "number") return !Number.isNaN(new Date(value).getTime());
+  return false;
+}
+
+function cleanNewRowForSupabase(row: Record<string, unknown>) {
+  const now = new Date().toISOString();
+  const cleaned = { ...row };
+
+  if (!cleaned.created_at || !isValidDateValue(cleaned.created_at)) {
+    cleaned.created_at = now;
+  }
+
+  if (!cleaned.updated_at || !isValidDateValue(cleaned.updated_at)) {
+    cleaned.updated_at = now;
+  }
+
+  return cleaned;
+}
+
+function cleanUpdateForSupabase(row: Record<string, unknown>) {
+  const cleaned = { ...row };
+
+  if ("created_at" in cleaned && (!cleaned.created_at || !isValidDateValue(cleaned.created_at))) {
+    delete cleaned.created_at;
+  }
+
+  if ("updated_at" in cleaned && (!cleaned.updated_at || !isValidDateValue(cleaned.updated_at))) {
+    delete cleaned.updated_at;
+  }
+
+  return { ...cleaned, updated_at: new Date().toISOString() };
+}
+
 async function readRow(request: NextRequest) {
   const body = await request.json();
   return (body?.row ?? body) as Partial<UploadedFile>;
@@ -58,7 +93,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Blob preview URLs cannot be saved. Upload the file first or use a permanent URL." }, { status: 400 });
     }
 
-    const { data, error } = await supabase.from("uploaded_files").insert(row).select("*").single();
+    const { data, error } = await supabase.from("uploaded_files").insert(cleanNewRowForSupabase(row as Record<string, unknown>)).select("*").single();
     if (error) throw error;
     return NextResponse.json({ data });
   } catch (error) {
@@ -79,7 +114,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { id, ...updates } = row;
-    const { data, error } = await supabase.from("uploaded_files").update(updates).eq("id", id).select("*").single();
+    const { data, error } = await supabase.from("uploaded_files").update(cleanUpdateForSupabase(updates as Record<string, unknown>)).eq("id", id).select("*").single();
     if (error) throw error;
     return NextResponse.json({ data });
   } catch (error) {
