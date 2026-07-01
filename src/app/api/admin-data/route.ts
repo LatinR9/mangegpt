@@ -24,6 +24,28 @@ function serializeError(error: unknown) {
   return String(error);
 }
 
+function isValidDateValue(value: unknown) {
+  if (value instanceof Date) return !Number.isNaN(value.getTime());
+  if (typeof value === "string" || typeof value === "number") return !Number.isNaN(new Date(value).getTime());
+  return false;
+}
+
+function cleanRowForSupabase(row: Record<string, unknown>) {
+  const cleaned = { ...row };
+
+  if (cleaned.created_at == null || cleaned.created_at === "") {
+    delete cleaned.created_at;
+  }
+
+  if (cleaned.updated_at == null || cleaned.updated_at === "") {
+    delete cleaned.updated_at;
+  } else if (!isValidDateValue(cleaned.updated_at)) {
+    cleaned.updated_at = new Date().toISOString();
+  }
+
+  return cleaned;
+}
+
 async function fetchTable(table: AdminTableName) {
   const supabase = createServiceSupabaseClient();
   if (!supabase) throw new Error("Supabase service client is not configured.");
@@ -37,7 +59,8 @@ async function syncTable(table: AdminTableName, rows: Record<string, unknown>[])
   if (!supabase) throw new Error("Supabase service client is not configured.");
 
   if (rows.length > 0) {
-    const { error: upsertError } = await supabase.from(table).upsert(rows, { onConflict: "id" });
+    const cleanedRows = rows.map(cleanRowForSupabase);
+    const { error: upsertError } = await supabase.from(table).upsert(cleanedRows, { onConflict: "id" });
     if (upsertError) throw upsertError;
   }
 
@@ -55,7 +78,7 @@ async function syncTable(table: AdminTableName, rows: Record<string, unknown>[])
 async function syncSingle(table: "app_settings" | "telegram_settings", row: Record<string, unknown>) {
   const supabase = createServiceSupabaseClient();
   if (!supabase) throw new Error("Supabase service client is not configured.");
-  const { error } = await supabase.from(table).upsert(row, { onConflict: "id" });
+  const { error } = await supabase.from(table).upsert(cleanRowForSupabase(row), { onConflict: "id" });
   if (error) throw error;
 }
 
