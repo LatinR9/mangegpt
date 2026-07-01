@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -24,27 +24,77 @@ const emptyGroup: Omit<ShareGroup, "id"> = {
   expiry_date: today,
   note: ""
 };
+const missingPrerequisitesMessage = "Please create an app and service account before creating a group.";
+const missingAppAccountMessage = "No service account for this app yet.";
 
 export default function GroupsPage() {
-  const { apps, groupMembers, serviceAccounts, setGroupMembers, setShareGroups, shareGroups } = useAdminData();
+  const {
+    apps,
+    dataError,
+    groupMembers,
+    isSupabaseEnabled,
+    refreshData,
+    serviceAccounts,
+    setGroupMembers,
+    setShareGroups,
+    shareGroups
+  } = useAdminData();
   const { t } = useLanguage();
   const firstInputRef = useRef<HTMLInputElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyGroup);
   const [saved, setSaved] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const selectedAppId = form.app_id || apps[0]?.id || "";
+  const filteredServiceAccounts = useMemo(
+    () => serviceAccounts.filter((account) => account.app_id === selectedAppId),
+    [selectedAppId, serviceAccounts]
+  );
+  const selectedServiceAccountId = filteredServiceAccounts.some((account) => account.id === form.service_account_id)
+    ? form.service_account_id
+    : filteredServiceAccounts[0]?.id || "";
+  const missingPrerequisites = apps.length === 0 || serviceAccounts.length === 0;
+  const selectedAppHasNoAccount = Boolean(selectedAppId) && !missingPrerequisites && filteredServiceAccounts.length === 0;
+  const saveDisabled = missingPrerequisites || !selectedAppId || !selectedServiceAccountId;
+  const visibleError = apiError ?? dataError;
 
   function withDefaults(group = emptyGroup) {
+    const appId = group.app_id || apps[0]?.id || "";
+    const accountsForApp = serviceAccounts.filter((account) => account.app_id === appId);
+    const accountId = accountsForApp.some((account) => account.id === group.service_account_id)
+      ? group.service_account_id
+      : accountsForApp[0]?.id || "";
+
     return {
       ...group,
-      app_id: group.app_id || apps[0]?.id || "",
-      service_account_id: group.service_account_id || serviceAccounts[0]?.id || ""
+      app_id: appId,
+      service_account_id: accountId
     };
+  }
+
+  async function patchShareGroups(rows: ShareGroup[]) {
+    const response = await fetch("/api/admin-data", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table: "share_groups", rows })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "Failed to save group.");
+  }
+
+  function selectApp(appId: string) {
+    const accountsForApp = serviceAccounts.filter((account) => account.app_id === appId);
+    setForm({ ...form, app_id: appId, service_account_id: accountsForApp[0]?.id || "" });
+    setSaved(false);
+    setApiError(null);
   }
 
   function startNew() {
     setEditingId(null);
     setForm(withDefaults());
     setSaved(false);
+    setApiError(null);
     window.setTimeout(() => firstInputRef.current?.focus(), 0);
   }
 
@@ -52,21 +102,47 @@ export default function GroupsPage() {
     setEditingId(group.id);
     setForm(withDefaults({ ...group, note: group.note ?? "" }));
     setSaved(false);
+    setApiError(null);
     window.setTimeout(() => firstInputRef.current?.focus(), 0);
   }
 
-  function saveGroup(event: FormEvent<HTMLFormElement>) {
+  async function saveGroup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSaved(false);
+    setApiError(null);
+
+    if (missingPrerequisites) {
+      setApiError(missingPrerequisitesMessage);
+      return;
+    }
+
+    const groupWithDefaults = withDefaults(form);
+    if (!groupWithDefaults.app_id || !groupWithDefaults.service_account_id) {
+      setApiError(groupWithDefaults.app_id ? missingAppAccountMessage : missingPrerequisitesMessage);
+      return;
+    }
+
     const payload: ShareGroup = {
       id: editingId ?? createId("grp"),
-      ...withDefaults(form),
+      ...groupWithDefaults,
       group_name: form.group_name.trim() || "Untitled group",
       seats_total: Number(form.seats_total) || 1,
       note: form.note?.trim() || null
     };
-    setShareGroups((current) => editingId ? current.map((item) => item.id === editingId ? payload : item) : [payload, ...current]);
-    setEditingId(payload.id);
-    setSaved(true);
+    const nextGroups = editingId ? shareGroups.map((item) => item.id === editingId ? payload : item) : [payload, ...shareGroups];
+
+    try {
+      if (isSupabaseEnabled) {
+        await patchShareGroups(nextGroups);
+        await refreshData();
+      } else {
+        setShareGroups(nextGroups);
+      }
+      setEditingId(payload.id);
+      setSaved(true);
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Failed to save group.");
+    }
   }
 
   function deleteGroup(id: string) {
@@ -95,14 +171,27 @@ export default function GroupsPage() {
           <CardHeader><CardTitle>{editingId ? t("edit") : t("newGroup")}</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={saveGroup} className="space-y-4">
-              <div><Label>App</Label><Select value={form.app_id || apps[0]?.id || ""} onChange={(event) => setForm({ ...form, app_id: event.target.value })}>{apps.map((app) => <option value={app.id} key={app.id}>{app.name}</option>)}</Select></div>
-              <div><Label>Service account</Label><Select value={form.service_account_id || serviceAccounts[0]?.id || ""} onChange={(event) => setForm({ ...form, service_account_id: event.target.value })}>{serviceAccounts.map((account) => <option value={account.id} key={account.id}>{account.label}</option>)}</Select></div>
+              {missingPrerequisites ? <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">{missingPrerequisitesMessage}</p> : null}
+              {selectedAppHasNoAccount ? <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">{missingAppAccountMessage}</p> : null}
+              {visibleError ? <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">{visibleError}</p> : null}
+              <div>
+                <Label>App</Label>
+                <Select value={selectedAppId} onChange={(event) => selectApp(event.target.value)} disabled={apps.length === 0}>
+                  {apps.map((app) => <option value={app.id} key={app.id}>{app.name}</option>)}
+                </Select>
+              </div>
+              <div>
+                <Label>Service account</Label>
+                <Select value={selectedServiceAccountId} onChange={(event) => { setForm({ ...form, app_id: selectedAppId, service_account_id: event.target.value }); setSaved(false); setApiError(null); }} disabled={filteredServiceAccounts.length === 0}>
+                  {filteredServiceAccounts.map((account) => <option value={account.id} key={account.id}>{account.label}</option>)}
+                </Select>
+              </div>
               <div><Label>Group name</Label><Input ref={firstInputRef} value={form.group_name} onChange={(event) => setForm({ ...form, group_name: event.target.value })} placeholder="July group A" /></div>
               <div><Label>Total seats</Label><Input type="number" min={1} value={form.seats_total} onChange={(event) => setForm({ ...form, seats_total: Number(event.target.value) })} /></div>
               <div><Label>Expiry date</Label><Input type="date" value={form.expiry_date} onChange={(event) => setForm({ ...form, expiry_date: event.target.value })} /></div>
               <div><Label>Note</Label><Textarea value={form.note ?? ""} onChange={(event) => setForm({ ...form, note: event.target.value })} /></div>
-              {saved ? <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{t("saved")}</p> : null}
-              <Button type="submit" className="w-full">{t("save")}</Button>
+              {saved && !visibleError ? <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{t("saved")}</p> : null}
+              <Button type="submit" className="w-full" disabled={saveDisabled}>{t("save")}</Button>
             </form>
           </CardContent>
         </Card>

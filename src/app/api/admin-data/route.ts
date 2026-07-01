@@ -30,9 +30,23 @@ function isValidDateValue(value: unknown) {
   return false;
 }
 
+const nullableForeignKeys = [
+  "app_id",
+  "service_account_id",
+  "group_id",
+  "customer_id",
+  "folder_id",
+  "folder_file_id",
+  "telegram_settings_id"
+];
+
 function cleanRowForSupabase(row: Record<string, unknown>) {
   const now = new Date().toISOString();
   const cleaned = { ...row };
+
+  for (const key of nullableForeignKeys) {
+    if (cleaned[key] === "") cleaned[key] = null;
+  }
 
   if (!cleaned.created_at || !isValidDateValue(cleaned.created_at)) {
     cleaned.created_at = now;
