@@ -7,22 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input, Label, Select, Textarea } from "@/components/ui/form";
 import { useAdminData } from "@/hooks/use-admin-data";
-import { useLocalStorageState } from "@/hooks/use-local-storage-state";
-import { telegramSettings as seedTelegramSettings } from "@/lib/mock-data";
+import { useTelegramSettings } from "@/hooks/use-telegram-settings";
+import { seedTelegramSettingsValue } from "@/lib/admin-data";
 import type { TelegramSettings } from "@/lib/types";
 import { daysUntil, formatDate } from "@/lib/utils";
 
 const defaultSettings: TelegramSettings = {
-  ...seedTelegramSettings[0],
-  bot_token: seedTelegramSettings[0]?.bot_token ?? "",
-  chat_id: seedTelegramSettings[0]?.chat_id ?? "",
-  reminder_days_before: seedTelegramSettings[0]?.reminder_days_before ?? seedTelegramSettings[0]?.reminder_days_before_expiry ?? 3,
-  default_message_template: seedTelegramSettings[0]?.default_message_template ?? "SubGroup Manager reminder: {app_name} / {group_name}"
+  ...seedTelegramSettingsValue,
+  bot_token: seedTelegramSettingsValue?.bot_token ?? "",
+  chat_id: seedTelegramSettingsValue?.chat_id ?? "",
+  reminder_days_before: seedTelegramSettingsValue?.reminder_days_before ?? seedTelegramSettingsValue?.reminder_days_before_expiry ?? 3,
+  default_message_template: seedTelegramSettingsValue?.default_message_template ?? "SubGroup Manager reminder: {app_name} / {group_name}"
 };
 
 export default function TelegramSettingsPage() {
   const { apps, groupMembers, shareGroups, customers } = useAdminData();
-  const [settings, setSettings] = useLocalStorageState<TelegramSettings>("sgm.telegramSettings", defaultSettings);
+  const [settings, setSettings, settingsReady, settingsError] = useTelegramSettings();
   const [form, setForm] = useState<TelegramSettings>(defaultSettings);
   const [message, setMessage] = useState("SubGroup Manager test message ✅");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export default function TelegramSettingsPage() {
       reminder_days_before: Number(form.reminder_days_before) || 0,
       reminder_days_before_expiry: Number(form.reminder_days_before) || Number(form.reminder_days_before_expiry) || 0
     });
-    setFeedback("Telegram settings saved locally and will remain after refresh.");
+    setFeedback("Telegram settings saved.");
   }
 
   function clearSettings() {
@@ -100,6 +100,8 @@ export default function TelegramSettingsPage() {
   return (
     <div>
       <PageHeader title="Telegram reminders" description="Configure persistent prototype reminder delivery and preview expiring group messages." />
+      {!settingsReady ? <div className="mb-4 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">Loading Telegram settings...</div> : null}
+      {settingsError ? <div className="mb-4 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">{settingsError}</div> : null}
       <div className="grid gap-6 xl:grid-cols-[460px_1fr]">
         <Card>
           <CardHeader><CardTitle>Reminder settings</CardTitle></CardHeader>
@@ -107,7 +109,7 @@ export default function TelegramSettingsPage() {
             <form onSubmit={saveSettings} className="space-y-4">
               <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-100">
                 <ShieldAlert className="mr-2 inline h-4 w-4" />
-                Private admin prototype only. In production, bot_token and chat_id should be encrypted or stored server-side/Supabase, not exposed in browser localStorage.
+                Private admin area only. Bot token and chat id are saved through the server API; keep Supabase service keys server-side only.
               </div>
               <div>
                 <Label>Bot token</Label>

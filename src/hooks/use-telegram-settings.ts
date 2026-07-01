@@ -1,8 +1,8 @@
 "use client";
 
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
-import { localStorageKeys, seedAppSettingsValue } from "@/lib/admin-data";
-import type { AppSettings } from "@/lib/types";
+import { localStorageKeys, seedTelegramSettingsValue } from "@/lib/admin-data";
+import type { TelegramSettings } from "@/lib/types";
 
 function hasSupabasePublicEnv() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -12,8 +12,8 @@ function resolveAction<T>(action: SetStateAction<T>, current: T) {
   return typeof action === "function" ? (action as (value: T) => T)(current) : action;
 }
 
-export function useAppSettings(): [AppSettings, Dispatch<SetStateAction<AppSettings>>, boolean, string | null] {
-  const [settings, setSettingsState] = useState<AppSettings>(seedAppSettingsValue);
+export function useTelegramSettings(): [TelegramSettings, Dispatch<SetStateAction<TelegramSettings>>, boolean, string | null] {
+  const [settings, setSettingsState] = useState<TelegramSettings>(seedTelegramSettingsValue);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabaseEnabled = hasSupabasePublicEnv();
@@ -27,10 +27,10 @@ export function useAppSettings(): [AppSettings, Dispatch<SetStateAction<AppSetti
 
       if (!supabaseEnabled) {
         try {
-          const stored = window.localStorage.getItem(localStorageKeys.app_settings);
-          if (stored && active) setSettingsState(JSON.parse(stored) as AppSettings);
+          const stored = window.localStorage.getItem(localStorageKeys.telegram_settings);
+          if (stored && active) setSettingsState(JSON.parse(stored) as TelegramSettings);
         } catch {
-          if (active) setSettingsState(seedAppSettingsValue);
+          if (active) setSettingsState(seedTelegramSettingsValue);
         } finally {
           if (active) setReady(true);
         }
@@ -40,10 +40,10 @@ export function useAppSettings(): [AppSettings, Dispatch<SetStateAction<AppSetti
       try {
         const response = await fetch("/api/admin-data", { cache: "no-store" });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error ?? "Failed to load settings.");
-        if (active && result.app_settings) setSettingsState(result.app_settings as AppSettings);
+        if (!response.ok) throw new Error(result.error ?? "Failed to load Telegram settings.");
+        if (active && result.telegram_settings) setSettingsState(result.telegram_settings as TelegramSettings);
       } catch (loadError) {
-        if (active) setError(loadError instanceof Error ? loadError.message : "Failed to load settings.");
+        if (active) setError(loadError instanceof Error ? loadError.message : "Failed to load Telegram settings.");
       } finally {
         if (active) setReady(true);
       }
@@ -55,22 +55,22 @@ export function useAppSettings(): [AppSettings, Dispatch<SetStateAction<AppSetti
     };
   }, [supabaseEnabled]);
 
-  const setSettings: Dispatch<SetStateAction<AppSettings>> = (action) => {
+  const setSettings: Dispatch<SetStateAction<TelegramSettings>> = (action) => {
     setSettingsState((current) => {
       const next = resolveAction(action, current);
       if (supabaseEnabled) {
         fetch("/api/admin-data", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ table: "app_settings", row: next })
+          body: JSON.stringify({ table: "telegram_settings", row: next })
         }).then(async (response) => {
           if (!response.ok) {
             const result = await response.json().catch(() => ({}));
-            throw new Error(result.error ?? "Failed to save settings.");
+            throw new Error(result.error ?? "Failed to save Telegram settings.");
           }
-        }).catch((saveError) => setError(saveError instanceof Error ? saveError.message : "Failed to save settings."));
+        }).catch((saveError) => setError(saveError instanceof Error ? saveError.message : "Failed to save Telegram settings."));
       } else {
-        window.localStorage.setItem(localStorageKeys.app_settings, JSON.stringify(next));
+        window.localStorage.setItem(localStorageKeys.telegram_settings, JSON.stringify(next));
       }
       return next;
     });

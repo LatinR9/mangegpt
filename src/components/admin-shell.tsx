@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form";
 import { useAppSettings } from "@/hooks/use-app-settings";
+import { AdminDataProvider, useAdminData } from "@/hooks/use-admin-data";
 import { useLanguage } from "@/hooks/use-language";
 import type { TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,29 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function DataStatusBanner() {
+  const { dataError, isLoading, isSupabaseEnabled, refreshData } = useAdminData();
+
+  if (isLoading) {
+    return <div className="mb-4 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">Loading admin data...</div>;
+  }
+
+  if (dataError) {
+    return (
+      <div className="mb-4 flex flex-col gap-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100 sm:flex-row sm:items-center sm:justify-between">
+        <span className="break-words">Supabase data sync failed: {dataError}</span>
+        <Button type="button" variant="outline" onClick={() => void refreshData()}>Retry</Button>
+      </div>
+    );
+  }
+
+  if (!isSupabaseEnabled) {
+    return <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">Supabase env is missing. Using localStorage fallback on this device.</div>;
+  }
+
+  return null;
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const { language, setLanguage, t } = useLanguage();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -52,8 +76,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <header className="admin-band sticky top-0 z-40 flex h-16 items-center justify-between px-4 lg:hidden">
+    <AdminDataProvider>
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-transparent">
+      <header className="admin-band sticky top-0 z-40 flex h-16 min-w-0 items-center justify-between gap-3 px-3 sm:px-4 lg:hidden">
         <BrandMark />
         <Button size="icon" variant="outline" onClick={() => setDrawerOpen(true)} aria-label="Open menu"><Menu className="h-5 w-5" /></Button>
       </header>
@@ -76,8 +101,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <form action="/logout" method="post" className="mt-auto hidden p-4 lg:block"><Button className="w-full" variant="outline"><LogOut className="h-4 w-4" /> Log out</Button></form>
       </aside>
 
-      <main className="pb-24 lg:pb-0 lg:pl-[280px]">
-        <div className="mx-auto w-full max-w-7xl overflow-x-hidden p-4 sm:p-6 lg:p-8">{children}</div>
+      <main className="min-w-0 max-w-full overflow-x-hidden pb-24 lg:pb-0 lg:pl-[280px]">
+        <div className="mx-auto w-full min-w-0 max-w-7xl overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6 lg:p-8"><DataStatusBanner />{children}</div>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-800 bg-slate-950/95 px-1 py-2 backdrop-blur lg:hidden">
@@ -89,5 +114,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         ))}
       </nav>
     </div>
+    </AdminDataProvider>
   );
 }

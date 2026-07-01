@@ -30,6 +30,12 @@
     @apply border-border;
   }
 
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     background:
@@ -38,6 +44,13 @@
       radial-gradient(rgba(59, 130, 246, 0.16) 1px, transparent 1px),
       #02040a;
     background-size: auto, auto, 24px 24px, auto;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
   }
 }
 

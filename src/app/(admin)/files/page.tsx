@@ -27,6 +27,7 @@ export default function FilesPage() {
   const [folderForm, setFolderForm] = useState(emptyFolder);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [fileForm, setFileForm] = useState(emptyFile);
+  const [browserFile, setBrowserFile] = useState<File | null>(null);
   const [filterFolder, setFilterFolder] = useState("all");
   const [query, setQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -66,28 +67,61 @@ export default function FilesPage() {
     setUploadedFiles((current) => current.filter((file) => file.folder_id !== id));
   }
 
-  function saveFile(event: FormEvent<HTMLFormElement>) {
+  async function uploadBrowserFile(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch("/api/admin-files", {
+      method: "POST",
+      body: formData
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? "Upload failed.");
+    return result as { file_url: string; file_name: string; file_type: string; file_size: number };
+  }
+
+  async function saveFile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const supabaseEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+    let fileUrl = fileForm.file_url.trim();
+    let fileName = fileForm.file_name.trim();
+    let fileType = fileForm.file_type.trim() || null;
+    let fileSize = Number(fileForm.file_size) || null;
+
+    if (browserFile && supabaseEnabled) {
+      try {
+        const uploaded = await uploadBrowserFile(browserFile);
+        fileUrl = uploaded.file_url;
+        fileName = fileName || uploaded.file_name;
+        fileType = uploaded.file_type;
+        fileSize = uploaded.file_size;
+      } catch (error) {
+        setSaved(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed.");
+        return;
+      }
+    }
+
     const payload: UploadedFile = {
       id: createId("file"),
       folder_id: fileForm.folder_id || fileFolders[0]?.id || "",
-      file_name: fileForm.file_name.trim() || "uploaded-file",
-      file_url: fileForm.file_url.trim(),
-      file_type: fileForm.file_type.trim() || null,
-      file_size: Number(fileForm.file_size) || null,
+      file_name: fileName || "uploaded-file",
+      file_url: fileUrl,
+      file_type: fileType,
+      file_size: fileSize,
       note: fileForm.note.trim() || null,
       created_at: new Date().toISOString()
     };
     if (!payload.file_url) return setSaved("Add a file URL or choose a browser file preview first.");
     setUploadedFiles((current) => [payload, ...current]);
     setFileForm({ ...emptyFile, folder_id: payload.folder_id });
-    setSaved("File added locally.");
+    setBrowserFile(null);
+    setSaved(browserFile && supabaseEnabled ? "File uploaded to Supabase Storage." : "File added.");
   }
 
   function handleBrowserFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
+    setBrowserFile(file);
     setFileForm({
       ...fileForm,
       file_name: file.name,
@@ -106,7 +140,7 @@ export default function FilesPage() {
   return (
     <div>
       <PageHeader title={t("files")} description="Private image and file library for slips, product images, account screenshots, and business files." />
-      <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
         <div className="space-y-6">
           <Card>
             <CardHeader><CardTitle>{t("createFolder")}</CardTitle></CardHeader>
@@ -140,10 +174,10 @@ export default function FilesPage() {
             <CardHeader><CardTitle>Folders</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 xl:grid-cols-3">
               {fileFolders.map((folder) => (
-                <div key={folder.id} className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
-                  <div className="mb-3 flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: folder.color ?? "#3b82f6" }} /><p className="font-medium">{folder.name}</p></div>
-                  <p className="mb-3 text-xs text-muted-foreground">{folder.note}</p>
-                  <div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => editFolder(folder)}><Pencil className="h-4 w-4" /> Rename</Button><Button size="sm" variant="destructive" onClick={() => deleteFolder(folder.id)}><Trash2 className="h-4 w-4" /></Button></div>
+                <div key={folder.id} className="min-w-0 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                  <div className="mb-3 flex min-w-0 items-center gap-2"><span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: folder.color ?? "#3b82f6" }} /><p className="truncate font-medium">{folder.name}</p></div>
+                  <p className="mb-3 break-words text-xs text-muted-foreground">{folder.note}</p>
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2"><Button size="sm" variant="outline" onClick={() => editFolder(folder)}><Pencil className="h-4 w-4" /> Rename</Button><Button size="sm" variant="destructive" onClick={() => deleteFolder(folder.id)}><Trash2 className="h-4 w-4" /></Button></div>
                 </div>
               ))}
             </CardContent>
@@ -152,7 +186,7 @@ export default function FilesPage() {
           <Card>
             <CardHeader className="gap-4 lg:flex-row lg:items-center lg:justify-between">
               <CardTitle>File library</CardTitle>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 lg:w-auto">
                 <Select value={filterFolder} onChange={(event) => setFilterFolder(event.target.value)}><option value="all">All folders</option>{fileFolders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</Select>
                 <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search file name or note" />
               </div>
@@ -162,18 +196,18 @@ export default function FilesPage() {
               {filteredFiles.length === 0 ? <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">{t("empty")}</div> : (
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
                   {filteredFiles.map((file) => (
-                    <div key={file.id} className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/70">
+                    <div key={file.id} className="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-950/70">
                       <button type="button" onClick={() => setPreviewFile(file)} className="block aspect-video w-full bg-slate-900">
                         {file.file_type?.startsWith("image") || file.file_url.includes("dicebear") ? <img src={file.file_url} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Preview unavailable</div>}
                       </button>
                       <div className="space-y-2 p-4">
-                        <p className="font-medium">{file.file_name}</p>
+                        <p className="break-words font-medium">{file.file_name}</p>
                         <p className="text-xs text-muted-foreground">{file.file_type ?? "file"} / {formatSize(file.file_size)} / {formatDate(file.created_at)}</p>
-                        <p className="text-sm text-muted-foreground">{file.note}</p>
-                        <div className="flex flex-wrap gap-2">
+                        <p className="break-words text-sm text-muted-foreground">{file.note}</p>
+                        <div className="grid gap-2 min-[430px]:grid-cols-2">
                           <Button size="sm" variant="outline" onClick={() => setPreviewFile(file)}><Eye className="h-4 w-4" /> Preview</Button>
                           <Button size="sm" variant="outline" onClick={() => copyUrl(file)}>{copiedId === file.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copiedId === file.id ? "Copied" : "URL"}</Button>
-                          <Button size="sm" variant="destructive" onClick={() => setUploadedFiles((current) => current.filter((item) => item.id !== file.id))}><Trash2 className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="destructive" className="min-[430px]:col-span-2" onClick={() => setUploadedFiles((current) => current.filter((item) => item.id !== file.id))}><Trash2 className="h-4 w-4" /></Button>
                         </div>
                       </div>
                     </div>
@@ -186,9 +220,9 @@ export default function FilesPage() {
       </div>
 
       {previewFile ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setPreviewFile(null)}>
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-xl border border-slate-700 bg-slate-950 p-4" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-3 flex items-center justify-between"><p className="font-semibold">{previewFile.file_name}</p><Button variant="outline" onClick={() => setPreviewFile(null)}>Close</Button></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-4" onClick={() => setPreviewFile(null)}>
+          <div className="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-xl border border-slate-700 bg-slate-950 p-3 sm:p-4" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-3 flex min-w-0 items-center justify-between gap-3"><p className="min-w-0 break-words font-semibold">{previewFile.file_name}</p><Button variant="outline" onClick={() => setPreviewFile(null)}>Close</Button></div>
             <img src={previewFile.file_url} alt="" className="max-h-[75vh] w-full rounded-lg object-contain" />
           </div>
         </div>

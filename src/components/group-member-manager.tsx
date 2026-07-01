@@ -139,7 +139,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
       <Link href="/groups" className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Back to groups</Link>
       <PageHeader title={group.group_name} description={`${app?.name ?? "App"} expires ${formatDate(group.expiry_date)}`} action={<StatusBadge status={status} />} />
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
+      <section className="mb-6 grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-7">
         {[
           ["Total seats", group.seats_total],
           ["Filled seats", filledSeats],
@@ -158,10 +158,10 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
 
       <Card className="mb-6 border-blue-500/30 bg-blue-500/10">
         <CardContent className="flex flex-col gap-3 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="font-medium text-blue-100">
+          <div className="min-w-0 break-words font-medium text-blue-100">
             {filledSeats < group.seats_total ? "Incomplete group" : missingPayments === 0 ? "Paid complete" : `Missing ${missingPayments} payments`}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid w-full min-w-0 gap-2 sm:w-auto sm:grid-cols-3">
             <Button type="button" onClick={addCustomerToGroup}><Plus className="h-4 w-4" /> Add customer to group</Button>
             <Button type="button" variant="outline" onClick={() => clearSeat()}><UserRoundX className="h-4 w-4" /> Clear seat</Button>
             <Button type="button" onClick={saveChanges}><Save className="h-4 w-4" /> Save changes</Button>
@@ -171,11 +171,11 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
 
       {saved ? <p className="mb-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200"><CheckCircle2 className="mr-2 inline h-4 w-4" /> Saved changes to localStorage.</p> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <Card>
           <CardHeader><CardTitle>Manage members</CardTitle></CardHeader>
           <CardContent>
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid min-w-0 gap-3 md:grid-cols-2">
               {seats.map((seatNo) => {
                 const member = draftMembers.find((item) => item.seat_no === seatNo);
                 const customer = customers.find((item) => item.id === member?.customer_id);
@@ -184,7 +184,7 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
                     type="button"
                     key={seatNo}
                     onClick={() => setActiveSeat(seatNo)}
-                    className={cn("rounded-lg border p-4 text-left transition hover:border-blue-400 hover:bg-blue-500/10", activeSeat === seatNo ? "border-blue-400 bg-blue-500/15" : "border-border bg-slate-950/60")}
+                    className={cn("min-w-0 rounded-lg border p-4 text-left transition hover:border-blue-400 hover:bg-blue-500/10", activeSeat === seatNo ? "border-blue-400 bg-blue-500/15" : "border-border bg-slate-950/60")}
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <span className="text-sm font-semibold">Seat {seatNo}</span>
@@ -192,9 +192,9 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
                     </div>
                     <div className="flex items-center gap-3">
                       {customer?.profile_image_url ? <img src={customer.profile_image_url} alt="" className="h-11 w-11 rounded-full border border-blue-500/30 bg-muted" /> : <div className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed text-xs text-muted-foreground">No</div>}
-                      <div>
-                        <p className="font-medium">{customer?.nickname ?? "No customer"}</p>
-                        <p className="text-sm text-muted-foreground">{customer?.full_name ?? "Choose a customer"}</p>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{customer?.nickname ?? "No customer"}</p>
+                        <p className="truncate text-sm text-muted-foreground">{customer?.full_name ?? "Choose a customer"}</p>
                       </div>
                     </div>
                     <p className="mt-3 line-clamp-1 text-xs text-muted-foreground">{contactLine(customer)}</p>
@@ -240,23 +240,23 @@ export function GroupMemberManager({ groupId }: { groupId: string }) {
                 ) : null}
                 <div className="space-y-2">
                   <Label>Payment status</Label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid gap-2 min-[380px]:grid-cols-3">
                     {paidOptions.map((option) => <button type="button" key={option.value} onClick={() => updateActiveMember({ ...activeMember, paid_status: option.value })} className={cn("rounded-lg border px-3 py-3 text-sm font-semibold transition", activeMember.paid_status === option.value ? option.selected : option.className)}>{option.label}</button>)}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2"><Label>Paid amount</Label><Input type="number" value={activeMember.paid_amount} onChange={(event) => updateActiveMember({ ...activeMember, paid_amount: Number(event.target.value) })} /></div>
                   <div className="space-y-2"><Label>Payment date</Label><Input type="date" value={activeMember.payment_date ?? ""} onChange={(event) => updateActiveMember({ ...activeMember, payment_date: event.target.value || null })} /></div>
                 </div>
                 <div className="space-y-2">
                   <Label>Renewal status</Label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid gap-2 min-[380px]:grid-cols-3">
                     {renewalOptions.map((option) => <button type="button" key={option.value} onClick={() => updateActiveMember({ ...activeMember, wants_renewal: option.value })} className={cn("rounded-lg border px-3 py-3 text-sm font-semibold transition", activeMember.wants_renewal === option.value ? option.selected : option.className)}>{option.label}</button>)}
                   </div>
                 </div>
                 <div className="space-y-2"><Label>Member expiry date</Label><Input type="date" value={activeMember.member_expiry_date} onChange={(event) => updateActiveMember({ ...activeMember, member_expiry_date: event.target.value })} /></div>
                 <div className="space-y-2"><Label>Note</Label><Textarea value={activeMember.note ?? ""} onChange={(event) => updateActiveMember({ ...activeMember, note: event.target.value || null })} /></div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <Button type="button" variant="outline" onClick={() => clearSeat()}><Trash2 className="h-4 w-4" /> Clear seat</Button>
                   <Button type="button" onClick={saveChanges}><Save className="h-4 w-4" /> Save changes</Button>
                 </div>
